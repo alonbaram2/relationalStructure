@@ -1,0 +1,64 @@
+function S=freesurfer_vol2surf(subj,mean_func,varargin);
+% Map multiple input volumes to left and right 
+% surface
+% If no register.dat file is in the surface directory, 
+% a regsiter.dat is made 
+subj_dir=getenv('SUBJECTS_DIR'); 
+
+hem={'lh','rh'};
+surf={'.white'};
+images={}; 
+num_surf=5;
+smoothing=1; 
+hemisphere=[1:2]; % Do both hemispheres 
+
+vararginoptions(varargin,{'smoothing','images'});
+
+
+% Original subjects dir
+surf_dir =[subject_dir filesep subj filesep 'surf'];
+now_dir=pwd; 
+cd surf_dir; 
+
+
+% If no register.dat exists, make one 
+if (~exist('register.dat','file'))
+    freesurfer_mat2registerdat(subj,images{1}); 
+end; 
+
+
+[status,result] = system(['mri_info ' anafile ' --vox2ras-tkr']); 
+A=sscanf(result,'%f'); 
+Ta=reshape(A,4,4)';
+
+[status,result] = system(['mri_info ' anafile ' --vox2ras']); 
+A=sscanf(result,'%f'); 
+Ma=reshape(A,4,4)';
+
+[status,result] = system(['mri_info ' mean_func ' --vox2ras-tkr']); 
+A=sscanf(result,'%f'); 
+Tf=reshape(A,4,4)';
+
+[status,result] = system(['mri_info ' mean_func ' --vox2ras']); 
+A=sscanf(result,'%f'); 
+Mf=reshape(A,4,4)';
+
+[status,cres] = system(['mri_info ' mean_func ' --cres']); 
+[status,rres] = system(['mri_info ' mean_func ' --rres']); 
+
+
+R=Tf* inv(Mf) *Ma *inv(Ta);  
+
+
+fid=fopen('register.dat','w'); 
+if (fid==-1) 
+    error('could not open register.dat'); 
+end; 
+fprintf(fid,'%s\n',subj);
+fprintf(fid,'%s\n%s\n%2.2f\n',cres,rres,0.15);
+fprintf(fid,'%f %f %f\n',R(1,1),R(1,2),R(1,3),R(1,4));
+fprintf(fid,'%f %f %f\n',R(2,1),R(2,2),R(2,3),R(2,4));
+fprintf(fid,'%f %f %f\n',R(3,1),R(3,2),R(3,3),R(3,4));
+fprintf(fid,'%f %f %f\n',R(4,1),R(4,2),R(4,3),R(4,4));
+fprintf(fid,'round\n'); 
+fclose(fid);
