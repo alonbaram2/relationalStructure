@@ -1,4 +1,4 @@
-function [u_hat,resMS,Sw_hat,beta_hat,shrinkage,trRR]=noiseNormalizeBeta(Y,SPM,varargin)
+function [u_hat,resMS,Sw_hat,beta_hat,shrinkage,trRR]=noiseNormalizeBeta_confounds(Y,SPM,varargin)
 % function [u_hat,Sw_hat,resMS,beta_hat]=rsa_noiseNormalizeBeta(Y,SPM,varargin)
 % Estimates beta coefficiencts beta_hat and residuals from raw time series Y
 % Estimates the true activity patterns u_hat by applying noise normalization to beta_hat
@@ -53,7 +53,7 @@ end;
 
 %%% redo the first-level GLM using matlab functions 
 KWY=spm_filter(xX.K,xX.W*Y);                               %%% filter out low-frequence trends in Y
-beta_hat=xX.pKX*KWY;                                       %%% ordinary least squares estimate of beta_hat = inv(X'*X)*X'*Y
+beta_hat=xX.pKX*KWY;                                       %%% ordinary least squares estimate of beta_hat = inv(X'*X)*X'*Y. xX.pKX is pinv of filtered and whitened dm X. 
 res=spm_sp('r',xX.xKXs,KWY);                               %%% residuals: res  = Y - X*beta
 clear KWY XZ                                               %%% clear to save memory
 

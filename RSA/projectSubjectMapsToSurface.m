@@ -16,6 +16,7 @@ for iSub=1:length(subjects)
         mkdir(outputDir)
     end
     cd(spmDir);    
+%     filenames = dir('con*.nii');
     filenames = dir('con*.nii');
     
     hemName = {'LeftHem','RightHem'};

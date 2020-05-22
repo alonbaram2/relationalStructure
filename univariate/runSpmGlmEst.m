@@ -49,9 +49,11 @@ for iBlock=1:numel(blockNames) % for each block/
     J.sess(iBlock).regress = struct('name', {}, 'val', {});
         
     % transform motion parameter files outputed by FSL preprocessing to a
-    % format that SPM can understand 
+    % format that SPM can understand. Note that the order of the output of FSL preprocessingis different 
+    % to the usual order in SPM - in FSL it's angles (in rad) first (roll,
+    % yaw, pitch), then translation (x,y,z). 
     R = load(fullfile(mcDir,[blockNames{iBlock},'.par'])); % load motion correction parameters.
-    names = {'x','y','z','roll','yaw','pitch'}; % names of columns in motion parameters files
+    names = {'roll','yaw','pitch','x','y','z'}; % names of columns in motion parameters files of FSL. 
     save(fullfile(mcDir,[blockNames{iBlock},'.mat']),'names','R');    
     J.sess(iBlock).multi_reg = {fullfile(mcDir,[blockNames{iBlock},'.mat'])};      
     % high pass filter

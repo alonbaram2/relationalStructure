@@ -12,7 +12,7 @@ function getEvs(rootData,subjects,iSub,glm)
 % subject, though note some of the code will need adjusting.
 
 mkdir(fullfile(rootData,'evs',glm,subjects{iSub}))
-load([rootData '/bhv/processed/behMatlabVars.mat'],'rl','B','timings')
+load([rootData '/bhv/processed/behMatlabVars.mat'],'rl','B','timings','confounds')
 T = timings;
 
 switch (glm)
@@ -275,6 +275,100 @@ switch (glm)
                 save(fullfile(rootData,'evs',glm,subjects{iSub},['run' int2str(iRun) '_cond' int2str(iCond)]),'names','onsets','durations','pmod','orth');
                 
             end
-        end
-        
+        end    
+    case('confounds')
+        nOnsetEvs = 2; % stim and outcom
+        for iRun=1:2
+            for iCond=1:4
+                names = cell(1,nOnsetEvs);
+                onsets = cell(1,nOnsetEvs);
+                durations = cell(1,nOnsetEvs);
+                orth = cell(1,nOnsetEvs);
+                
+                % get variables of specific subject, will be easier to index
+                % later
+                
+                subT.stim             = squeeze(T.stim(iSub,iRun,iCond,:));
+                subT.outcome          = squeeze(T.outcome(iSub,iRun,iCond,:));
+                rt                    = squeeze(confounds.rt(iSub,iRun,iCond,:));
+                logrt                 = squeeze(confounds.logrt(iSub,iRun,iCond,:));
+                correct               = squeeze(confounds.correct(iSub,iRun,iCond,:));
+                st1                   = squeeze(confounds.switchTask1(iSub,iRun,iCond,:));
+                st2                   = squeeze(confounds.switchTask2(iSub,iRun,iCond,:));
+                st3                   = squeeze(confounds.switchTask3(iSub,iRun,iCond,:));
+                % set the first trial (currently NaN to the mean - it will
+                % be 0 in the final regressor. 
+                st1(1)                = nanmean(st1);
+                st2(1)                = nanmean(st2);
+                st3(1)                = nanmean(st3);
+               
+                % regressors
+                iEv = 1;
+                
+                names{iEv}     = 'all_S';
+                onsets{iEv}    = subT.stim;
+                
+                % parametric modulators on stimulus onsets of AB
+                pmod(iEv).name{1}  = 'rt';
+                pmod(iEv).param{1} = rt - mean(rt);
+                pmod(iEv).poly{1}  = 1;
+                                
+                pmod(iEv).name{2}  = 'logrt';
+                pmod(iEv).param{2} = logrt - mean(logrt);
+                pmod(iEv).poly{2}  = 1;
+                
+                pmod(iEv).name{3}  = 'correct';
+                pmod(iEv).param{3} = correct - mean(correct);
+                pmod(iEv).poly{3}  = 1;
+                
+                pmod(iEv).name{4}  = 'st1';
+                pmod(iEv).param{4} = st1 - mean(st1);
+                pmod(iEv).poly{4}  = 1;  
+                
+                pmod(iEv).name{5}  = 'st2';
+                pmod(iEv).param{5} = st2 - mean(st2);
+                pmod(iEv).poly{5}  = 1; 
+                
+                pmod(iEv).name{6}  = 'st3';
+                pmod(iEv).param{6} = st3 - mean(st3);
+                pmod(iEv).poly{6}  = 1;
+                
+                iEv = iEv + 1;
+                
+                names{iEv}     = 'all_O';
+                onsets{iEv}    = subT.outcome;
+                
+                % parametric modulators on stimulus onsets of AB
+                pmod(iEv).name{1}  = 'rt';
+                pmod(iEv).param{1} = rt - mean(rt);
+                pmod(iEv).poly{1}  = 1;
+                                
+                pmod(iEv).name{2}  = 'logrt';
+                pmod(iEv).param{2} = logrt - mean(logrt);
+                pmod(iEv).poly{2}  = 1;
+                
+                pmod(iEv).name{3}  = 'correct';
+                pmod(iEv).param{3} = correct - mean(correct);
+                pmod(iEv).poly{3}  = 1;
+                
+                pmod(iEv).name{4}  = 'st1';
+                pmod(iEv).param{4} = st1 - mean(st1);
+                pmod(iEv).poly{4}  = 1;  
+                
+                pmod(iEv).name{5}  = 'st2';
+                pmod(iEv).param{5} = st2 - mean(st2);
+                pmod(iEv).poly{5}  = 1; 
+                
+                pmod(iEv).name{6}  = 'st3';
+                pmod(iEv).param{6} = st3 - mean(st3);
+                pmod(iEv).poly{6}  = 1;
+                
+                for iEv=1:length(names)
+                    durations{iEv} = 0.1 .* ones(size(onsets{iEv}));  % all regressors are stick regressors (duration of 0.1 sec).
+                    orth{iEv}      = false; % orthogonalise parametric modulators?
+                end
+                save(fullfile(rootData,'evs',glm,subjects{iSub},['run' int2str(iRun) '_cond' int2str(iCond)]),'names','onsets','durations','pmod','orth');
+                
+            end
+        end        
 end

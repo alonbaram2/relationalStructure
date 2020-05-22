@@ -3,13 +3,15 @@ clear
 rootScripts = '/home/fs0/abaram/scripts/NN2020';
 addpath(genpath(rootScripts));
 spmPath = '/home/fs0/abaram/scratch/MATLAB/spm12';
-addpath(genpath(spmPath));
-
-groupStatsPermTestsFlag = false; % run permutation tests at the group level for RSA- very long
+addpath(spmPath);
 
 rootData    = '/home/fs0/abaram/scratch/NN2020';
 subjects = {'sub-01','sub-02','sub-03','sub-04','sub-05','sub-06','sub-07','sub-08','sub-09',...
     'sub-10','sub-11','sub-12','sub-13','sub-14','sub-15','sub-16','sub-17','sub-18','sub-19',...
+    'sub-20','sub-21','sub-22','sub-23','sub-24','sub-25','sub-26','sub-27','sub-28'};
+
+subjects = {'sub-01','sub-02','sub-03','sub-04','sub-05','sub-06','sub-07',...
+    'sub-11','sub-12','sub-13','sub-14','sub-15','sub-16','sub-17','sub-18','sub-19',...
     'sub-20','sub-21','sub-22','sub-23','sub-24','sub-25','sub-26','sub-27','sub-28'};
 
 nSub = length(subjects);
@@ -66,43 +68,39 @@ end
 
 % # group analysis 
 % first stack all single subjects contrasts into one file
-stackSubjectsContrasts(rootData,'GLM2','xRun','surf');
+stackSubjectsContrasts(rootData,subjects,'GLM2','xRun','surf');
 
 % Run permutation tests - Fig 2d and S4
     % run permutation tests in PALM on the surface
     % The permutation tests also correct for multiple comparisons. 
-    % Note that  this takes a very long time to run.
+    % Note that  this takes a long time to run.
     clusterThresh = '3.1'; % cluster forming threshold. 
     nPerm       = '10000';% number of permutations
-    % mask to run the permutation tests in and perform multiple comparisons in.
-    % mask is intentionally of left hemi (lh) as the right hemi (rh) was
-    % previously registered to the left, so it now has the lh indeces. This
-    % happened inside searchlightDefinitionSurfaceWrapper.m
-    mask          = fullfile(rootData,'freesurfer-subjects','fsaverage','label','lh.CORTEX.mgh');
+    maskName = 'CORTEX';
     % run PALM
-    groupLevelPermTests(rootData,'GLM2','xRun','surf',clusterThresh,nPerm,mask)
+    groupLevelPermTests(rootData,'GLM2','xRun','surf',clusterThresh,nPerm,maskName)
     
 % # plot RDMs at the peaks: entorhinal for relational structure and 
 %   LOC for visual identity  (both in right hemisphere)
 %   First get vertex of peak activation, then plot average RDM across
 %   participants in this vertex. 
 
-% relational structure - Fig 2b and c, top
-relationalStructMap = load_mgh(fullfile(rootData,'RDMs','GLM2','groupStats','perm','xRun','surf',...
-                        ['relationalStructure_smth5_rh_nPerm10000_clstrTh3p1_dpv_tstat_uncp_c1.mgz']));
+% visualise effects at their peak
+% relational structure - Fig 2b and c, top. Get the max vertex from the group level map with
+% all 28 subjects, saved in masksAndRois. This the 28-subject result equivalent to
+% the 25-subjects files in fullfile(rootData,'RDMs','GLM2','groupStats','perm','xRun','surf','CORTEX')
+relationalStructMap = load_mgh(fullfile(rootData,'masksAndRois','fsaverage','relationalStructure_smth5_rh_nPerm10000_clstrTh3p1_dpv_tstat_c1_all28subjects.mgz'));
 [~,indMax] = max(relationalStructMap);
 roiStr = [num2str(indMax - 1),'rh']; % -1 is for conversion from Matlab to Freesurfer coords. 
 plotDataRdm(rootData,subjects,'GLM2','xRun','relationalStructure',roiStr,fwhm)
 plotGardnerAltman(rootData,subjects,'GLM2','xRun','surf','relationalStructure',roiStr,fwhm)
 
-% visual identity - Fig 2b and c, bottom
-visualIdentityMap = load_mgh(fullfile(rootData,'RDMs','GLM2','groupStats','perm','xRun','surf',...
-                        ['visualIdentity_smth5_rh_nPerm10000_clstrTh3p1_dpv_tstat_uncp_c1.mgz']));
+% # visual identity - Fig 2b and c, bottom
+visualIdentityMap = load_mgh(fullfile(rootData,'masksAndRois','fsaverage','visualIdentity_smth5_rh_nPerm10000_clstrTh3p1_dpv_tstat_uncp_c1_all28subjects.mgz'));
 [~,indMax] = max(visualIdentityMap);
 roiStr = [num2str(indMax - 1),'rh']; % -1 is for conversion from Matlab to Freesurfer coords. 
 plotDataRdm(rootData,subjects,'GLM2','xRun','visualIdentity',roiStr,fwhm)  
 plotGardnerAltman(rootData,subjects,'GLM2','xRun','surf','visualIdentity',roiStr,fwhm)
-
 
 %% Prediction error x structure interaction (Fig 3)
 % GLM3 - first level. 
@@ -123,6 +121,7 @@ end
 % vmPFC) will serve as ROIs for the PE x structure interaction effect.
 % Fig 3b and c (insets). 
 univariateGroupLevel(rootData,subjects,'GLM3')
+projectTMapsToSurface(rootData,'GLM3')
 
 % run the RSA analysis on the cortical surface. 
 % To perform statistical tests we will perform an ROI analysis on the peaks
@@ -133,30 +132,40 @@ end
 
 % # group analysis 
 % first stack all single subjects contrasts into one file
-stackSubjectsContrasts(rootData,'GLM3','xRun','surf');
+stackSubjectsContrasts(rootData,subjects,'GLM3','xRun','surf');
 % Run permutation tests in PALM.
 % The permutation tests also correct for multiple comparisons. %
 % However this takes a long time to run.
 clusterThresh = 'None'; % cluster forming threshold. For this GLM we are 
-                        % only looking at ROIs defined b y the peaks of the
+                        % only looking at ROIs defined by the peaks of the
                         % univarite prediction error effect. 
 nPerm       = '10000';% number of permutations
 % mask to run the permutation tests in and perform multiple comparisons in.
-% mask is intentionally of left hemi (lh) as the right hemi (rh) was
-% previously registered to the left, so it now has the lh indeces. This
-% happened inside searchlightDefinitionSurfaceWrapper.m
-mask          = fullfile(rootData,'freesurfer-subjects','fsaverage','label','lh.CORTEX.mgh');
+maskName = 'CORTEX';
 % run PALM
-groupLevelPermTests(rootData,'GLM3','xRun','surf',clusterThresh,nPerm,mask)
+groupLevelPermTests(rootData,'GLM3','xRun','surf',clusterThresh,nPerm,maskName)
 
-% plot subject-average data RDM in the vmPFC peak of univariate effect: Fig
-% 3b and S5
-plotDataRdm(rootData,subjects,'GLM3','xRun','peXstructure','51084lh',fwhm)
-plotGardnerAltman(rootData,subjects,'GLM3','xRun','surf','peXstructure','51084lh',fwhm)
+% get ROI for vmPFC effect from univariate PE effect: note I'm using the
+% T-map from all 28 subjects (and not just the 25 subjects who agreed to
+% share their data). This is provided in rootData/masksAndRois/fsaverage.
+% this is the 28 subjects equivalent of
+% rootData/spmDirs/GLM3/2ndLevel_all/crPe_STRUCT/spmT_GLM3_crPe_STRUCT_0001_lh.mgh
+
+peUnivariateSurfaceEffect_lh = load_mgh(fullfile(rootData,'masksAndRois','fsaverage','spmT_GLM3_crPe_STRUCT_0001_lh_all28subjects.mgh'));
+peUnivariateSurfaceEffect_rh = load_mgh(fullfile(rootData,'masksAndRois','fsaverage','spmT_GLM3_crPe_STRUCT_0001_rh_all28subjects.mgh'));
+[max_lh,roiVertex_lh] = max(peUnivariateSurfaceEffect_lh);
+[max_rh,roiVertex_rh] = max(peUnivariateSurfaceEffect_rh);
+roiStr_lh = [num2str(roiVertex_lh - 1) 'lh']; % -1 is for conversion to 0-based Freesurfer indeces
+roiStr_rh = [num2str(roiVertex_rh - 1) 'rh']; % -1 is for conversion to 0-based Freesurfer indeces
+% plot subject-average data RDM in the vmPFC peaks of univariate effect: Fig
+% 3b,c and S5
+plotGardnerAltman(rootData,subjects,'GLM3','xRun','surf','peXstructure',roiStr_lh,fwhm)
+plotGardnerAltman(rootData,subjects,'GLM3','xRun','surf','peXstructure',roiStr_rh,fwhm)
+plotDataRdm(rootData,subjects,'GLM3','xRun','peXstructure',roiStr_lh,fwhm)
 
 % # run a parallel pipeline in MNI space rather than subject space, in
 % order to run RSA on volumetric searchlights (specifically in the ventral
-% Striatim peak of the pe x structure interaction effect). 
+% Striatum - whole brain peak of the PE univariate effect). 
 
 for iSub=1:length(subjects)
     % run SPM first-level GLM in MNI space
@@ -172,15 +181,18 @@ end
 % group stats
 % group stats on volumetric data in ventral striatum 
 % first stack all single subjects contrasts into one file
-stackSubjectsContrasts(rootData,'GLM3','xRun','lAccumbens20');
+stackSubjectsContrasts(rootData,subjects,'GLM3','xRun','lAccumbens20');
 clusterThresh = 'None'; % searching only in a peak voxel (from the orthogonal univariate contrast).
 nPerm       = '10000';% number of permutations
-mask          = fullfile(rootData,'anatomical','mni152Masks','lAccumbens20.nii');
-groupLevelPermTests(rootData,'GLM3','xRun','lAccumbens20',clusterThresh,nPerm,mask)
+maskFile          = fullfile(rootData,'anatomical','mni152Masks','lAccumbens20.nii');
+groupLevelPermTests(rootData,'GLM3','xRun','lAccumbens20',clusterThresh,nPerm,maskFile)
 
-% Fig 3c: peak of ventral striatum effect is in MNI coords [-10,8,-12],
-% corresponding to FSL voxel coords [50,67,30]
-plotGardnerAltman(rootData,subjects,'GLM3','xRun','lAccumbens20','peXstructure',[50,67,30],fwhm)
+% Fig 3c: peak of univariate PE effect in all the brain is ventral striatum
+peXStructureUnivariateSurfaceEffect_vol = read_avw(fullfile(rootData,'masksAndRois','fsaverage','spmT_GLM3_crPe_STRUCT_0001_all28subjects.nii'));
+[~,roiVox] = max(peXStructureUnivariateSurfaceEffect_vol(:));
+[x,y,z] = ind2sub(size(peXStructureUnivariateSurfaceEffect_vol),roiVox); 
+% plot interaction effect at peak of univariate effect
+plotGardnerAltman(rootData,subjects,'GLM3','xRun','lAccumbens20','peXstructure',[x,y,z] - 1,fwhm) % -1 is for conversion to 0-based FSL indeces
 
 %% Representation of a behaviourally relevant latent variable. (Fig 4)
 % For this analysis we also use GLM2, only here we will use all 5 events
@@ -195,33 +207,31 @@ end
 
 % # group analysis - Fig 4a right
 % first stack all single subjects contrasts into one file
-stackSubjectsContrasts(rootData,'GLM2','corrWithinBlock','surf');
+stackSubjectsContrasts(rootData,subjects,'GLM2','corrWithinBlock','surf');
 % Run permutation tests
 % run on the surface permutation tests in PALM.
 clusterThresh = '2.3'; % cluster forming threshold.
 nPerm       = '10000';% number of permutations
-% mask to run the permutation tests in and perform multiple comparisons in.
-% correcMask is intentionally of left hemi (lh) as the right hemi (rh) was
-% previously registered to the left, so it now has the lh indeces.
-mask          = fullfile(rootData,'freesurfer-subjects','fsaverage','label','lh.CORTEX.mgh');
+maskName = 'PALS_B12_OFC'; % change this to 'CORTEX' if you want to look in all cortex (e.g. for the pPHCg effect).
 % run PALM
-groupLevelPermTests(rootData,'GLM2','corrWithinBlock','surf',clusterThresh,nPerm,mask)
+groupLevelPermTests(rootData,'GLM2','corrWithinBlock','surf',clusterThresh,nPerm,maskName)
 
-% plot RDMs at the peak of mOFC effect - Fig S6. 
-plotDataRdm(rootData,subjects,'GLM2','corrWithinBlock','latentVar_S-S','110371lh',fwhm)
-plotDataRdm(rootData,subjects,'GLM2','corrWithinBlock','latentVar_O-O','110371lh',fwhm)
-plotDataRdm(rootData,subjects,'GLM2','corrWithinBlock','latentVar_S-O','110371lh',fwhm)
+% get index of max of latent variable effect. Once again get the index from
+% the group map of all 28 subjects, provided at
+% rootData/masksAndRois/fsaverage/
+LatentVariableMap = load_mgh(fullfile(rootData,'masksAndRois','fsaverage',...
+                        'latentVar_all_smth5_lh_nPerm10000_clstrTh2p3_dpv_tstat_c1_all28subjects.mgz'));
+[~,indMax] = max(LatentVariableMap);
+roiStr = [num2str(indMax - 1),'lh']; % -1 is for conversion from Matlab to Freesurfer coords. 
+% Fig 4a left and 4b
+plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_all',roiStr,fwhm)
+plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_S-S',roiStr,fwhm)
+plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_O-O',roiStr,fwhm)
+plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_S-O',roiStr,fwhm)
 
-% Fig 4a
-plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_all','110371lh',fwhm)
-% fig 4b, left
-plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_S-S','110371lh',fwhm)
-% fig 4b, middle
-plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_O-O','110371lh',fwhm)
-% fig 4b, right
-plotGardnerAltman(rootData,subjects,'GLM2','corrWithinBlock','surf','latentVar_S-O','110371lh',fwhm)
-
-%% Subject-by-subject correaltion between peak vmPFC pe x structure & peak OFC latent variable effects 
-plotVmpfcOfcEffectsCorr(rootData,subjects)
+% plot RDMs at the peak of OFC effect  - Fig S6b. 
+plotDataRdm(rootData,subjects,'GLM2','corrWithinBlock','latentVar_S-S',roiStr,fwhm)
+plotDataRdm(rootData,subjects,'GLM2','corrWithinBlock','latentVar_O-O',roiStr,fwhm)
+plotDataRdm(rootData,subjects,'GLM2','corrWithinBlock','latentVar_S-O',roiStr,fwhm)
 
 

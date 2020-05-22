@@ -42,7 +42,7 @@ if strcmp(distType,'xRun')
     toPlot(logical(eye(lengthDiag))) = dataRdmMean(lengthDiag*(lengthDiag-1)/2+1:end);
     
 elseif strcmp(distType,'corrWithinBlock')
-    if strcmp('analysisName','latentVar_S-O')
+    if strcmp(analysisName,'latentVar_S-O')
         % first average the elements of S-O and O-S as this is
         % non-symmetric
         tmp = nan(3,1); 

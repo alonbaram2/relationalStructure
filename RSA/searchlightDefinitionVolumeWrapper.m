@@ -8,7 +8,7 @@ function searchlightDefinitionVolumeWrapper(rootData,sub,roi)
 % of 20 (i.e. any voxels that are part of the left nucleus accumbens with a
 % probabiliyt of more than 0.2). 
 
-anatomicalDir = fullfile(rootData,'anatomical','mni152Masks');
+anatomicalDir = fullfile(rootData,'masksAndRois','mni');
 
 % mask to find searchlights in. Only the voxels corresponding to the
 % cortical surface within this mask will be used. 

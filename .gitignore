@@ -1,0 +1,6 @@
+*~
+leaveOneOut/
+confounds_glms/
+*._*
+*/*._*
+utilities/clusterWrapper.m
